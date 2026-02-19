@@ -1,0 +1,5 @@
+{
+  "name": "NoteOrbit",
+  "description": "An intelligent note-generation platform that analyzes PDFs and images using Gemini 3 Pro to create structured indexes and detailed, summarized notes for easy learning.",
+  "requestFramePermissions": []
+}
