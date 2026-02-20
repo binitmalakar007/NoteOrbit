@@ -32,6 +32,25 @@ const App: React.FC = () => {
 
   const [loading, setLoading] = useState<LoadingState>(LoadingState.IDLE);
   const [error, setError] = useState<string | null>(null);
+  const [analysisProgress, setAnalysisProgress] = useState(0);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (loading === LoadingState.ANALYZING) {
+      setAnalysisProgress(0);
+      interval = setInterval(() => {
+        setAnalysisProgress(prev => {
+          if (prev < 30) return prev + Math.random() * 5;
+          if (prev < 70) return prev + Math.random() * 2;
+          if (prev < 92) return prev + Math.random() * 0.5;
+          return prev;
+        });
+      }, 400);
+    } else {
+      setAnalysisProgress(0);
+    }
+    return () => clearInterval(interval);
+  }, [loading]);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -179,13 +198,61 @@ const App: React.FC = () => {
                   </p>
                   
                   <div className="mt-12">
-                    <label className="cursor-pointer group block">
-                      <div className="flex flex-col items-center justify-center py-10 px-8 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-3xl group-hover:border-blue-500 group-hover:bg-blue-50/50 dark:group-hover:bg-blue-900/10 transition-all duration-300">
-                        <i className="fas fa-plus-circle text-4xl text-gray-300 group-hover:text-blue-500 mb-4 transform group-hover:scale-110 transition-transform"></i>
-                        <span className="text-sm font-bold text-gray-500 dark:text-gray-400 group-hover:text-blue-600 transition-colors">
-                          {loading === LoadingState.ANALYZING ? 'Processing Document...' : 'Select Document (PDF/Image)'}
-                        </span>
-                        <p className="text-[10px] uppercase tracking-widest text-gray-400 mt-2">Max 20MB • PDF, JPG, PNG</p>
+                    <label className={`cursor-pointer group block ${loading === LoadingState.ANALYZING ? 'pointer-events-none' : ''}`}>
+                      <div className={`flex flex-col items-center justify-center py-10 px-8 border-2 border-dashed rounded-3xl transition-all duration-500 ${
+                        loading === LoadingState.ANALYZING 
+                          ? 'border-blue-500 bg-blue-50/30 dark:bg-blue-900/10' 
+                          : 'border-gray-200 dark:border-gray-700 group-hover:border-blue-500 group-hover:bg-blue-50/50 dark:group-hover:bg-blue-900/10'
+                      }`}>
+                        {loading === LoadingState.ANALYZING ? (
+                          <div className="w-full space-y-6 animate-in fade-in zoom-in duration-500">
+                            <div className="relative w-20 h-20 mx-auto">
+                              <div className="absolute inset-0 border-4 border-blue-100 dark:border-blue-900/30 rounded-full"></div>
+                              <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 100 100">
+                                <circle
+                                  cx="50"
+                                  cy="50"
+                                  r="46"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="8"
+                                  className="text-blue-600 transition-all duration-500 ease-out"
+                                  strokeDasharray={`${2 * Math.PI * 46}`}
+                                  strokeDashoffset={`${2 * Math.PI * 46 * (1 - analysisProgress / 100)}`}
+                                  strokeLinecap="round"
+                                />
+                              </svg>
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <span className="text-sm font-black text-blue-600 dark:text-blue-400">
+                                  {Math.round(analysisProgress)}%
+                                </span>
+                              </div>
+                            </div>
+                            
+                            <div className="space-y-3">
+                              <p className="text-sm font-bold text-blue-600 dark:text-blue-400 animate-pulse">
+                                {analysisProgress < 30 ? 'Reading Document...' : 
+                                 analysisProgress < 60 ? 'Mapping Structure...' : 
+                                 analysisProgress < 85 ? 'Extracting Key Concepts...' : 
+                                 'Finalizing Index...'}
+                              </p>
+                              <div className="w-full h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                                <div 
+                                  className="h-full bg-blue-600 transition-all duration-500 ease-out"
+                                  style={{ width: `${analysisProgress}%` }}
+                                ></div>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <i className="fas fa-plus-circle text-4xl text-gray-300 group-hover:text-blue-500 mb-4 transform group-hover:scale-110 transition-transform"></i>
+                            <span className="text-sm font-bold text-gray-500 dark:text-gray-400 group-hover:text-blue-600 transition-colors">
+                              Select Document (PDF/Image)
+                            </span>
+                            <p className="text-[10px] uppercase tracking-widest text-gray-400 mt-2">Max 20MB • PDF, JPG, PNG</p>
+                          </>
+                        )}
                       </div>
                       <input 
                         type="file" 

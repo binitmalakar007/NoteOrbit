@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { Section } from '../types';
 
 interface SidebarProps {
@@ -10,13 +10,46 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ sections, selectedId, onSelect, isLoading }) => {
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const filteredSections = useMemo(() => {
+    if (!searchTerm.trim()) return sections;
+    const term = searchTerm.toLowerCase();
+    return sections.filter(
+      (section) =>
+        section.title.toLowerCase().includes(term) ||
+        section.summary.toLowerCase().includes(term)
+    );
+  }, [sections, searchTerm]);
+
   return (
     <aside className="w-full md:w-80 h-full bg-gray-100 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col transition-all">
-      <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+      <div className="p-6 border-b border-gray-200 dark:border-gray-700 space-y-4">
         <h2 className="text-xl font-bold text-gray-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
           <i className="fas fa-list-ul text-blue-500"></i>
           Index
         </h2>
+
+        <div className="relative group">
+          <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+            <i className={`fas fa-search text-xs transition-colors ${searchTerm ? 'text-blue-500' : 'text-gray-400 dark:text-gray-500'}`}></i>
+          </div>
+          <input
+            type="text"
+            placeholder="Search sections..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all placeholder:text-gray-400 dark:placeholder:text-gray-600"
+          />
+          {searchTerm && (
+            <button 
+              onClick={() => setSearchTerm('')}
+              className="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+            >
+              <i className="fas fa-times-circle text-xs"></i>
+            </button>
+          )}
+        </div>
       </div>
       <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
         {isLoading ? (
@@ -41,8 +74,8 @@ const Sidebar: React.FC<SidebarProps> = ({ sections, selectedId, onSelect, isLoa
               </div>
             </div>
           </div>
-        ) : sections.length > 0 ? (
-          sections.map((section) => (
+        ) : filteredSections.length > 0 ? (
+          filteredSections.map((section) => (
             <button
               key={section.id}
               onClick={() => onSelect(section.id)}
@@ -75,8 +108,10 @@ const Sidebar: React.FC<SidebarProps> = ({ sections, selectedId, onSelect, isLoa
           ))
         ) : (
           <div className="text-center py-10 text-gray-400">
-            <i className="fas fa-file-import text-4xl mb-3 opacity-20"></i>
-            <p className="text-sm">Upload a document to see the index</p>
+            <i className={`fas ${searchTerm ? 'fa-search-minus' : 'fa-file-import'} text-4xl mb-3 opacity-20`}></i>
+            <p className="text-sm">
+              {searchTerm ? `No results for "${searchTerm}"` : 'Upload a document to see the index'}
+            </p>
           </div>
         )}
       </div>
